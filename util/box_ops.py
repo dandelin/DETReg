@@ -13,6 +13,7 @@ Utilities for bounding box manipulation and GIoU.
 import torch
 from torchvision.ops.boxes import box_area
 
+
 def tensor_linspace(start, end, steps=10):
     """
     Vectorized version of torch.linspace.
@@ -44,6 +45,7 @@ def tensor_linspace(start, end, steps=10):
     out = start_w * start + end_w * end
     return out
 
+
 def crop_bbox(feats, bbox, HH, WW=None):
     """
     Take differentiable crops of feats specified by bbox.
@@ -61,7 +63,8 @@ def crop_bbox(feats, bbox, HH, WW=None):
     N = feats.size(0)
     assert bbox.size(0) == N
     assert bbox.size(1) == 4
-    if WW is None: WW = HH
+    if WW is None:
+        WW = HH
     bbox = box_cxcywh_to_xyxy(bbox)
     bbox = torch.clamp(bbox, 0.01, 0.99)
     bbox = 2 * bbox - 1
@@ -69,21 +72,21 @@ def crop_bbox(feats, bbox, HH, WW=None):
     X = tensor_linspace(x0, x1, steps=WW).view(N, 1, WW).expand(N, HH, WW)
     Y = tensor_linspace(y0, y1, steps=HH).view(N, HH, 1).expand(N, HH, WW)
     grid = torch.stack([X, Y], dim=3)
-    res = torch.nn.functional.grid_sample(feats, grid, padding_mode='border', align_corners=False)
+    res = torch.nn.functional.grid_sample(
+        feats, grid, padding_mode="border", align_corners=False
+    )
     return res
 
 
 def box_cxcywh_to_xyxy(x):
     x_c, y_c, w, h = x.unbind(-1)
-    b = [(x_c - 0.5 * w), (y_c - 0.5 * h),
-         (x_c + 0.5 * w), (y_c + 0.5 * h)]
+    b = [(x_c - 0.5 * w), (y_c - 0.5 * h), (x_c + 0.5 * w), (y_c + 0.5 * h)]
     return torch.stack(b, dim=-1)
 
 
 def box_xyxy_to_cxcywh(x):
     x0, y0, x1, y1 = x.unbind(-1)
-    b = [(x0 + x1) / 2, (y0 + y1) / 2,
-         (x1 - x0), (y1 - y0)]
+    b = [(x0 + x1) / 2, (y0 + y1) / 2, (x1 - x0), (y1 - y0)]
     return torch.stack(b, dim=-1)
 
 
@@ -144,11 +147,11 @@ def masks_to_boxes(masks):
     x = torch.arange(0, w, dtype=torch.float)
     y, x = torch.meshgrid(y, x)
 
-    x_mask = (masks * x.unsqueeze(0))
+    x_mask = masks * x.unsqueeze(0)
     x_max = x_mask.flatten(1).max(-1)[0]
     x_min = x_mask.masked_fill(~(masks.bool()), 1e8).flatten(1).min(-1)[0]
 
-    y_mask = (masks * y.unsqueeze(0))
+    y_mask = masks * y.unsqueeze(0)
     y_max = y_mask.flatten(1).max(-1)[0]
     y_min = y_mask.masked_fill(~(masks.bool()), 1e8).flatten(1).min(-1)[0]
 
